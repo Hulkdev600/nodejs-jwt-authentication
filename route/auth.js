@@ -15,10 +15,12 @@ router.post('/signup', [
         })
 
     ], async (req,res) => {
+    console.log('dsdfsdfs')
     const { password, email } = req.body
 
     const errors = validationResult(req)
 
+    console.log('erroR : ',errors)
     if(!errors.isEmpty()){
         return res.status(400).json({
             errors : errors.array()
@@ -68,18 +70,66 @@ router.post('/login', async (req,res)=> {
     console.log("로그인 테스트")
     const {password, email} = req.body;
 
+    let hashedPassword = await bcrypt.hash(password, 10) //패스워드 해시암호화
+
+    let loginProcedure = procedures.authHandler('login', email, hashedPassword); //프로시져 스트링 리턴
+
+    let mysqlResult = await mysqlUtil.mysql_exec(loginProcedure); // 프로시져 실행
+
+    let loginResult = mysqlResult[0][0]; // 로그인 프로시져 결과 리턴
+
+
+    if(loginResult.code !== '0'){
+        return res.status(400).json({
+            result : loginResult
+        })
+    }
+
+    const token = JWT.sign({ email : email }, 'secretKey',{
+        expiresIn: 360000
+    })
+
+    res.json({
+        result : loginResult,
+        token
+    })
+})
+
+
+router.get('/all', (req,res) => {
+    res.json(users)
+})
+
+module.exports = router
+
+
+/*
+//프로시져에서 값을 추출해서 여기서 비밀번호를 비교할수도 있다. 방법은 여러가지
+//프로시져에서 비밀번호체크까지 한번에 하는 방법이 있고 , 디비에서 이메일만 확인하여 가져와서 서버에서 비밀번호를 확인할수있다. => 여러가지 방법이 있다는 것을 경험하라는 의미로 적음
+router.post('/login', async (req,res)=> {
+    // 1. 요청 이메일과 패스워드를 얻는다
+    // 2. DB에 접속하여 해당 이메일의 정보를 확인한다.
+    // 3. 유저정보(이메일)가 없으면 로그인실패 리턴한다.
+    // 4. 유저정보가 있으면 비밀번호를 확인한다.
+    // 5. 비밀번호가 일치하면 토큰을 발급한다. || 비밀번호가 불일치라면 로그인실패 리턴한다.
+
+    console.log("로그인 테스트")
+    const {password, email} = req.body;
+
     let loginProcedure = procedures.authHandler('login', email, password);
 
-    let loginResult = await mysqlUtil.mysql_exec(loginProcedure);
+    let mysqlResult = await mysqlUtil.mysql_exec(loginProcedure);
 
-    console.log('loginResult : ', loginResult);
+    console.log('loginResult : ', mysqlResult);
 
-    return res.json({
-        'test': 'end'
-    })
-    let user = users.find((user)=>{
-        return user.email === email
-    })
+    let loginResult = mysqlResult[0][0];
+
+
+    if(loginResult.code !== '0'){
+        return res.status(400).json({
+            result : loginResult
+        })
+    }
 
 
     if(!user){
@@ -114,10 +164,4 @@ router.post('/login', async (req,res)=> {
         token
     })
 })
-
-
-router.get('/all', (req,res) => {
-    res.json(users)
-})
-
-module.exports = router
+*/

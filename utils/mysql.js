@@ -10,9 +10,6 @@ module.exports = {
         return new Promise((resolve, reject) => [
 
             dbConnection.getConnection((err, connection)=> {
-                console.log(dbConnection.host)
-                console.log(dbConnection.user)
-
 
                 if (err) {
                     console.log('err: ',err);

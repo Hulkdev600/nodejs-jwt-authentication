@@ -4,9 +4,7 @@ const authRouter = require('./route/auth')
 const post = require("./route/post")
 let enableCORS = require('./middleware/cors');
 require('dotenv').config()
-console.log('A',process.env.DB_PASS)
-console.log('B',process.env.DB_USER)
-console.log('C',process.env.DB_HOST)
+
 const app = express();
 
 
