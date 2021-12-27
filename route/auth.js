@@ -15,33 +15,32 @@ router.post('/signup', [
         })
 
     ], async (req,res) => {
-    console.log('dsdfsdfs')
-    const { password, email } = req.body
+
+    const { password, email, name } = req.body
 
     const errors = validationResult(req)
 
-    console.log('erroR : ',errors)
     if(!errors.isEmpty()){
         return res.status(400).json({
             errors : errors.array()
         })
     }
 
-    let user = users.find((user) => {
-        return user.email === email
-    })
-    if(user){
-         return res.status(400).json({
-              "errors" : [
-                  {
-                      "msg" : "이 이메일을 사용할 수 없습니다."
-                  }
-              ]
-         })
+    let hashedPassword = await bcrypt.hash(password, 10) //패스워드 해시암호화
+
+    let signupProcedure = procedures.authHandler('signup', email, hashedPassword, name); //프로시져 스트링 리턴
+
+    let mysqlResult = await mysqlUtil.mysql_exec(signupProcedure); // 프로시져 실행
+
+    let signupResult = mysqlResult[0][0]; // 로그인 프로시져 결과 리턴
+
+
+    if(signupResult.code === '-1'){
+         return res.status(400).json(signupResult)
     }
 
-    let hashedPassword = await bcrypt.hash(password, 10)
-    console.log(hashedPassword);
+    // let hashedPassword = await bcrypt.hash(password, 10)
+    // console.log(hashedPassword);
 
     users.push({
         email : email,
@@ -70,18 +69,34 @@ router.post('/login', async (req,res)=> {
     console.log("로그인 테스트")
     const {password, email} = req.body;
 
-    let hashedPassword = await bcrypt.hash(password, 10) //패스워드 해시암호화
 
-    let loginProcedure = procedures.authHandler('login', email, hashedPassword); //프로시져 스트링 리턴
+    let loginProcedure = procedures.authHandler('login', email); //프로시져 스트링 리턴
 
     let mysqlResult = await mysqlUtil.mysql_exec(loginProcedure); // 프로시져 실행
 
     let loginResult = mysqlResult[0][0]; // 로그인 프로시져 결과 리턴
 
+    let resultCode = loginResult.code;
+    let resultMsg = loginResult.msg;
+    let resultEmail = loginResult.email;
+    let resultPassword = loginResult.password;
 
-    if(loginResult.code !== '0'){
+
+    if(loginResult.code === '-1'){
         return res.status(400).json({
-            result : loginResult
+            code : resultCode,
+            msg : resultMsg
+        })
+    }
+
+    let passwordCompare = await bcrypt.compare(password, resultPassword)
+
+    if(!passwordCompare){
+        let resultMsg = '비밀번호가 일치하지 않습니다;'
+        return res.status({
+            code : resultCode,
+            msg : resultMsg,
+            email : resultEmail
         })
     }
 
@@ -90,8 +105,9 @@ router.post('/login', async (req,res)=> {
     })
 
     res.json({
-        result : loginResult,
-        token
+        code : '200',
+        msg : '로그인 성공',
+        token : token
     })
 })
 
