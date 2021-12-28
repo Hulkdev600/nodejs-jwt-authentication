@@ -3,7 +3,7 @@ const { check, validationResult } =require('express-validator')
 const { users } = require('../db')
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken')
-const procedures = require('../database/procedures')
+const procedures = require('../database/callProcedures')
 const mysqlUtil = require('../utils/mysql')
 
 router.post('/signup', [

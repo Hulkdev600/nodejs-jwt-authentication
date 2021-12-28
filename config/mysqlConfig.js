@@ -1,12 +1,6 @@
 
 require('dotenv').config()
 
-console.log('a',process.env.DB_HOST)
-console.log('b',process.env.DB_PORT)
-console.log('c',process.env.DB_USER)
-console.log('d',process.env.DB_PORT)
-
-
 module.exports = {
 
     authentication : {
